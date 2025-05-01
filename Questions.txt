@@ -1,1 +1,6 @@
 For Vector Clocks, how do we merge the clocks? Pair-Wise Maximum. Can you give examples?
+
+Totally Ordered Delivery Revist?
+
+Relibaility vs Availabilty in the context of fault tolerance?
+    -defintion from Lecture7 basically the same for each 

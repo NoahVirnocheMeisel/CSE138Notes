@@ -191,7 +191,7 @@ Chain replication vs P|B Latency:
 Primary Backup replication can only go as fast as the primary can go - backups underutilized 
 
 What must be true for Chain Replication to go faster?
--if all writes, Chain replication might still be doing better or about the same 
+-if all writes, Primary Backup might still be doing better or about the same 
 -if all reads, actually all the same 
 -if a perfectly even mix, we can get as much as 2x througput
     -balanced workload 

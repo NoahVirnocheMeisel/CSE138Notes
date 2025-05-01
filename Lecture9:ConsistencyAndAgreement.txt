@@ -1,0 +1,142 @@
+Agenda:
+Recap: Quorum Replication, CAP Theorem
+
+Today: Weak Consistency
+       "Eventual" Consistency
+       "Read you writes"
+       A tase of "Causal Consistency"
+
+    The Agreement Problem(consensus problem)
+    Leader Election
+
+Assingment 3 Coming Out this weekend!!!!
+-study for midterm over assingment most likely
+-Topic will be Causual/Weak Consistency
+-Will have about 2-3 weeks
+-Hardest(intellectualy) of the four assingments!!!!
+-Need to come up with your own strategy from topics discussed
+-not a plug and chug type solution like hw 2
+-HINT: remember relationships between messages, and vector clocks
+
+
+Quorum Replication Recap:
+-Client interacts with the backup(acting as the primary in primary backup sort of)
+-Has a set Number R and W that indicate the number of acks it needs for a read and write 
+-set of rules to get strong consistency(don't neccesarily have)
+- R + W > N (WR, RW)
+- W > [N/2] (WW)
+
+The above rules ensure that for any pair of reqeusts, there exists some node that witnesses conflicts 
+-fun chat bubble thing with replicas 
+
+Configurations Discussed:
+N=3, W=3, R=1
+N=3, W=2, R=2
+^COULD be Strongly Consistent
+   -different configurations with different advantages/disadvantages
+   -top one has fast reads, but fragile writes 
+   -bottom one is more balanced, helps ensure writes are more available
+N=3, W=1, R=3
+N=3, W=1, R=1
+^CANNOT be Strongly Consistent
+
+"suddenly i can spread my load across the entire cluster"
+
+IMPORTANT MIDTERM STUFF
+Look at the questions to show professor that you know the things 
+-engage in thought, and enumerate the tradeoffs and give a reccomendation basically
+-don't just write "primary backup because its got better write latency" 
+
+
+CAP:
+CA -Single Computer Oracle Database (not really a distributed system)
+CP -Asgn2
+AP -assingment3
+
+Paritions happening is a given in Distributed Systems in the Omission Model 
+So really its 
+CA - Pick 1 
+
+
+Assume A & B are running P, a CAP protocol 
+
+2 assume there is a partition between A and B 
+Client writes x=1 to A 
+Now tries to read x from B 
+
+B can either:
+1)reply with old value for x(A, NOT C)
+2)not reply (C, NOT A)
+3) ???? 
+
+
+
+Weak Consistency: 
+-Shopping cart example
+-don't really care if something goes wrong as long as customer adds stuff to cart and can checkout and give money 0_0
+
+
+In a cluster, how do nodes discover each other?
+
+
+Reflect back on Primary Backup:
+-how to unstuck 
+
+Bootstrapping:
+-to solve problem, we need to already have a solution 0_0
+-GNU C Compiler is written in C 0_0
+
+
+Discovery: 
+
+If Alice sends a message to Bob, how did Alice learn Bobs name?
+
+Can have new computers joining get given the view by the other computers?
+
+Apace Zookeeper:
+-implements a configuration Oracle 
+-S.C Oracle 
+   - so not neccesarily available 
+
+   -differs from DNS in that its S.C, wheras DNS is weakly consistent 
+
+
+Eventual Consistency 
+-keep reading, and know that at any given time message might be stale 
+-but if this happens forever, whats the point of replicaiton?
+-eventual consistency 
+
+Defn:
+1) Must be avaialble 
+If a client C writes a value v for key k1, a client c' reading K will eventually read v (or a later value)
+"Convergence"
+
+Hard to prove that this is correct, because there is no concrete witness to a violation
+
+"Read Your Writes" Saftey Property: 
+   -weaker than causual consistency(read asgn3 spec)
+
+
+Parition Example from above:
+
+Client comes along and writes x=BS 
+Another client c2 reads BS 
+Gets mad, and wrties y=FUA to node 2 0_0 
+
+Client 3 comes along, and reads x and y from node B 
+
+gets Null, and FUA 
+.... hmmm what? 
+
+Causual Consistency turns out to be that if you request something that depends on something elements
+the thing it depends on must be available first 
+
+Able to tolerate mistakes, but not able to tolerate mistakes forever basically 
+
+
+
+RYW:
+Client just writes x=1 on its own notebook paper 
+-can always read its writes 0_0
+But then other clients cannot read :/
+
