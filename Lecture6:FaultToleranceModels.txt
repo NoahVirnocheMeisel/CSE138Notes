@@ -1,0 +1,242 @@
+Agenda: 
+Recap: Recliable Delivery, Broadcast
+Today: Exam Logistics
+       Potpourii:--
+       Time: Ordered Delivery hierarchy, Consistent Global Snapshots
+       Views: Assignment 2
+       Fault-Tolerance Models: Primary Backup 
+                               Chain Replication
+                               State machine Rep.
+                               Qurum Replication
+
+
+!!!!MIDTERM STUFF IMPORTANT!!!!
+
+90% Chance that the midterm is going to be pushed to May 6th!!
+-due to labor strikes on May 1st
+-will update class website
+-May 1st class will likely be on Zoom
+=============================
+
+Taking a step back in todays lecture to revist topics skipped in time
+
+Importance of Strength in protocols:
+-e.g Causual Delivery is STRONGER than FIFO Delivery because Causal encompasses FIFO
+
+============================
+
+Reliable Delivery Property: 
+If a host H delivers a message M to host H2, and not all messages are dropped, then eventually H2 delivers M
+       -DOES NOT guarantee exactly-once delivery
+       -can't overcome omission without duplicate receiving in the async model
+       -x =1 vs x = x +1 varies 
+
+What kind of property is reliable delivery?
+If its a safety property, that means that there exists some finite witness to it going wrong 
+-this property requires something to be EVENTUALLY elivered
+       -so it must be liveness property 
+       
+
+Reliable Broadcast Property:
+
+If a correct host H delivers M, then all correct hosts deliver M 
+
+Correctness in this is a non-crashed node - in byzanite can be non-following instructs 
+
+Is reliable broadcast a safety property or a liveness property debate
+
+Safety:
+A delivers to B but not C is a violation of the property 
+
+Liveness because .... ? 
+
+=========================================
+
+Ordered Delivery Hierarchy: 
+
+FIFO and Causal:
+
+If x->y on the same machine, then x should be delivered before y 
+
+Causual delivery, but also by defintion is FIFO 
+
+Causal is a subset of FIFO 
+
+Any causal delivery is also a FIFO delivery 
+
+
+Totally Ordered Delivery: 
+If a host delivers a, then b, any host delivering a and b delivers a first 
+-need 4 computers to show a violation of Totally Ordered Delivery 
+-the x=1, x=2 with two clients(race condition thing)
+
+
+Is totally ordered stronger than Causal?
+Would need to show that there exists some Causal delivery that isn't Totally Ordered, but not vice versa
+
+FIFO can be different from Totally-ordered delivery, and therefore not comparable 
+For example, x sent before y but y delivered before x is FIFO violation, but not totally ordered 
+
+
+TFIFO  stronger tan Total and FIFO, but orthogonal to causal
+TCauusal is the strongest of them all 
+
+
+Ok if TCausal is the strongest, then why not always implement 
+-probably more expensive. Actally a lot more expensive because Totally-ordered is already very crazy and expensive and complex! 
+
+
+============================================================================
+
+Consistent Global Snapshots:
+
+
+Relationship between the state and the events:
+
+State is a function on the events and the order in which they happen on a timeline 
+-e.g A dot in the timeline of a computer is an event, but also a state in the sense that it is the result of all of the events that happened before 
+
+Are there such things as a distributed question that you ask, where you can't answer them with just one of the nodes 
+
+Say we are an observer O. IF we ask for WYS to node C, we know the state at that time.
+-Because we are in an async network, if we do this for nodes A and B then we are getting states from different times 
+
+Classic Example is Deadlocking:
+Alice Holding x, waiting on lock on y 
+Don't know if system is deadlocked without seeing other nodes 
+-if Bob is holding y and waiting on x then we are indeed deadlocked.
+       -need at least 2 nodes 
+
+
+Another example: Token passing 
+-is there exactly one token? 
+       -need to freeze time. Otherwise token might be passed as we are viewing 
+
+Snapshot DEfintions!!!!!
+
+"Snapshot" - A computer's state as of some event
+"Global Snapshot" - Union of local Snapshot
+
+"Consistent Global Snapshots"
+If a->b ^ b in S => a in S 
+
+Can draw a violation by drawing a message from a host NOT in snapshot to a host still in the snapshot 
+
+
+Think about it as a raggedy frontier and if the head of the arrow is in the snapshot but the start of the arrow is not, that is a finite witness to a causality violation 
+
+
+
+
+===============================
+
+In assingment 1, what are the events that could have impacted the state of your database?
+-PUT and DELETE requests 
+
+Strongly Consistent Means that to Clients a distributed database is indistinguishable from a non-distributed database 
+R(K,I) -> [Runs]
+
+Consider C1: put(x,1), get(y) and C2: put(y,7), g(x)
+
+Could have C2 read 1 and C1 reads 7, or C2 reads 1 and C1 reads null, or C2 reads null and C1 reads 7, or both read null
+At least 4 different orderings 
+
+OBSERVATION: State of the database is the result of all of the puts, but the orderings and observed behavior are a direct result of the ordering of the gets!! 
+
+
+
+=====================================
+
+Primary Backup Protocol:
+
+Primary is sort of masquerading as the single database 
+As long as clients interact with P and don't observe unexepcted behavior, its strongly consistent!!. One node Primary/backup works! 
+
+
+If you get a PUT request from client:
+1. Primary stores value 
+2. Send request to backups
+3. Once all of the acks have been recieved, we know that value is safe on backups
+4. Ok we are durable, and good to send back ACK to the client 
+
+
+Need puts to happen in the same order?
+
+Imagine a client asks primary for x read before other client doing put gets ack for x=1
+-what should happen?
+       idk, could have it return value its written, or it could return older value 
+
+
+What would a mistake, in regards to strong consistency, look like? 
+
+
+Views: 
+Somehow in our model, we need to assume that the primary knows about the backups and vice versa 
+
+View: [P, B1, B2]
+^informed by oracle that everyone has this view 
+Also know your own ID 
+
+
+Back to violation:
+
+Three reads from C2
+Reads from backup where x=1, then does a put request to primary x = 0, then does x=1 read and gets x= 0 
+
+
+Another issue:
+
+Two back to back puts
+Could lead to backups recieving in different order depending on when they recieve broadcasts
+
+How to fix? Total Order Delivery?!
+-One way: Primary waits to broadcast x=2  before x =1 is acked by all of the nodes 
+       -slow 
+-WAit, that is just FIFO 
+       -best method is to use timestamps
+              -ensure you have a TCP session!! Automaticlly will handle FIFO 
+              -We should test this thourghly though!!! 
+
+
+
+===========================================
+
+
+Chain Replication:
+How can we make our distributed system a little bit more faster?
+
+Issues with Primary Backup:
+Lots of work on Primary
+1). needs to handle all puts 
+2). Needs to handle all ACKS 
+3). need to handle all Gets
+4). Need to handle conversation with clients 
+
+
+Chaining tries to prevent waste 
+
+
+Two special computers instead of two 
+
+Linked list of nodes, with Head and Tail being special.
+
+Writes sent to Head, and passed down the list and when the Tail recieves it knows the data is durably stored and tail acks client 
+
+When a client does a read, the read goes to the Tail and the read can be answered by the tail instantly 
+
+
+-------- 
+Quick tangent on probability of losing data and going dow N
+
+1 Replica: p crashing 
+P(lose data) = P
+P(Available) = 1 - p 
+P(Consistent) = 1 
+
+3 Replicas:
+P(lose data) = p^3
+P(Available) = 1 - 3p
+P(consistent) = 1
+
+
+If we do crash, e.g 

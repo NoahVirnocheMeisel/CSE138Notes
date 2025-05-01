@@ -1,0 +1,238 @@
+Agenda:
+Quantifying the "ilities"
+More replication stuff 
+State machine Replication
+Views + View Changes
+Quorum Replication
+
+
+Assingment2 - Strategies & non-Strategies 
+
+- most of the class is doing primary/backup
+- a few souls are doing chain replication 
+    -out of scope for this assingment, but when trying to fix a downed node it's much harder to to fix chain replication 
+
+
+What should we do if a backup node is not up in Primary/Backup?
+
+Primary sends x=1 to backups, but only one of them is up?
+Should x=1 get reverted?
+
+Peter argues no!
+In the Crash model, which we are working in, if a node crashes it's never coming back!!!
+Also if a backup has the wrong value, thats fine! Backups don't respond to gets anyways, so primary believes x=0 still .
+
+What the primary should do is wait(possibly forever) for an ack from B2
+
+What would recovery look like though-segway into View
+==============================
+
+View + View Changes 
+
+Imagine a computer Oracle(O) that doesn't crash ever.
+
+Periodcally asks nodes if they are up
+Maintains table of when the most recent ack from node was 
+-when a node takes too long to respond, do a view change 
+    -specifically just shrink the view temporarily 
+
+"im deciding-because i'm god, that b2 is never coming back"
+
+Need to decide on new primary potentially
+
+
+Primary/Backup runs within a single view 
+Recovery protocol takes us from one view to another
+
+In general in assingment 2, don't need to implement failure detection 
+
+
+Job of P|B mode is to ensure durability and consistency in a given view.
+When failures happen, the detection of a failure and moving into a new view is the job of the recovery protocol.
+We are only concerned about P|B inbetween failures! 
+
+====================================================
+
+Aside on TCP
+-networking classes teach that TCP guarantees FIFO and RD 
+-TCP is a session oriented protocol.
+-if the session closes, for whatever reason, we can't ensure FIFO at new session 
+    -only ensures Reliable delivery and FIFO in a given session 
+    -we want end-to-end FIFO, not just session FIFO 
+    -we as the application programmer need to write "glue" to bridge sessions to ensure FIFO and RD 
+
+Most of the new distributed database stuff at Amazon uses Chain Replication due to operational complexity(peters hunch) and its generally newer(came out in 80's in Cornell)
+
+===================================================================
+
+
+Quantififcation:
+-Performance
+-(Durability) - probability excercise 
+-Fault - topic of today, how to quantfy fault tolerance 
+
+
+
+
+Fault Tolerance:
+1) Reliability 
+The likelihood that a component(anything) is functioning at some time
+
+Example: Disk Drive 
+-mechanical component, so goes without saying that over time the liklihood that the disc is working goes down 
+    - starts high, then drops steeply, then goes back up, and stays up for a while until steady decline(planned obselecence/End of Life)
+    - early days of having disc there is a decent chance it will have some latent issue
+
+2) Availability (not the replicated, binary kind)
+-Liklihood that a system is functioning at any given time 
+    -"how many nines of availability"
+-How do you compute that number? 
+A = uptime / downtime + uptime 
+
+What if I want to just estimate the availability 
+Can make a good estimate with two additional pieces of information
+
+MTBF - Mean Time Between Failures 
+MTTR - Mean Time To Recover(or Reboot)
+
+So a system is up for MTBF seconds, then down for MTTR seconds, and then up again 
+
+so 
+A = MTBF / MTBF + MTTR 
+
+Netflix has 4 Nines of Downtime !!!
+
+2 Nines is about an hour of downtime in a year
+5 nines is basically impossible as its like actual minutes of downtime 
+
+
+
+How to increase nines? 
+MTBF is mostly out of our control-don't get to control hardware going down really 
+Also increases in reliablilty come at exponential costs 
+CAN influence MTTR, and if we can get MTTR to close to 0 we are approaching 100% availability
+
+Recovery Oriented Computing(R.O.C)
+-concept from berkely
+-Rebooting solves just about every abiliy you can ever have in regards to stability and data 
+-took all of the resources at berkely and focused on getting reduced rebooting times 
+
+
+Can you predict a computer crash?
+
+-usually memory corruption is what leads to a computer crash and reboot
+-MOST memeory errors are preventable 
+-with ML and some estimates you can predict crashes
+-wont always work, can't assume faults are predictable, but we can still try to predict them to imrpove availabiliy 
+
+
+===============================================
+
+
+Performance:
+
+How do we quanitfy the performance of the system in the context of Client/Server Model: 
+
+1) Latency 
+    - "Speed" 
+    -time to get a response 
+    -seconds per operation 
+    -Client Centric 
+    -the length/time it takes to traverse pipe
+2) Throughput 
+    - "Speed"
+    -Rate of work
+    -Operations per second 
+    -Service-centric 
+
+3) Bandwith
+-how many bytes can the network move per second 
+-the capacity of a pipe
+
+How could we measure performance on our KVS? 
+Send a request and check time using timing library
+Throughput, wite start and end time in log 
+    first start time and last end time is total time of experiment.
+    divide # operations / total time to get throughput 
+    works as long as operations you are testing are not like one microsecond and log time throws off performance data 
+
+
+
+Average Throughput/Latency is not as important in real life:
+-care about the experience of the 99.9% latency
+
+Most services have a multi-modal distribution, but when averaging we tend to think of things as a normal distribution 
+-different spikes based on where the reads/writes happen(in chache, DRAM, disc)
+-what we really want is to plot equi-width histograms of performance
+
+Takeaway: Average Latency is not useful!!!! 
+
+
+===================================================
+
+Latency and Throughput in the Context of Replication 
+
+
+Chain Replication vs P|B Latency:
+
+-Chain Replication has higher latency for write operation
+    -As we add lots of backups to P|B, we expect the variability in latency to go up a bit, but the mean shoudln't change much 
+    -As we add lots of backupss to Chain Replication, our cost increases linearly with backups!!! 
+
+
+Sum(Link Latency) for Chain Replication, Max(Link latencies)
+Latency Increases as we add nodes to Chain, variability increases as we add nodes for P|b
+
+
+----
+
+Chain replication vs P|B Latency: 
+
+Primary Backup replication can only go as fast as the primary can go - backups underutilized 
+
+What must be true for Chain Replication to go faster?
+-if all writes, Chain replication might still be doing better or about the same 
+-if all reads, actually all the same 
+-if a perfectly even mix, we can get as much as 2x througput
+    -balanced workload 
+-primary is a bottleneck no matter what 
+
+
+====================================================
+
+State Machine Replication:
+-NOT an option for assignment 2, requires components we don't have access to but is in scope for midterm!!!! 
+
+DFA Example:
+
+Vending Machine Example:
+
+
+What if we represent our program as 1000s of states 
+-our computers all have finite state technically 
+
+Say you are in a state, why are you in that state? 
+1) All of the transitions explain why you are in that state 
+2) The order of the transitions 
+
+
+Can put a state machine on a bunch of computers
+And to ensure they are the same, just feed them the same inputs in the same order!! 
+
+Say we have Oracle, and client wants to send x=1. Asks Oracle for a counter to attach to message 
+Keeps this counter going, and its the only one who needs to track the counter 
+-only one communicating with client, so clients all get disjoint numbers
+
+=================================================
+
+
+In all three of the replication systems we have studied, they are strongly consistent 
+
+In all three, how do they ensure strong consistency? 
+
+
+They all establish a TOTAL ORDER over operations(Puts, Gets)
+Primary backup, the primary chooses the order
+Chain Replication, the Head totally orders the writes, and the Tail extends this into a total order over reads and writes 
+State Machine establish total order through the Oracle. The Oracle decides the order 
+

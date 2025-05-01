@@ -1,0 +1,175 @@
+Success In this Class:
+-take own notes
+Agenda:
+Recap: Happens before, Delivery Ordering protocols
+Today: Concurrency
+       Delivery protocols
+       Logical Clocks 
+
+
+Recap:
+Happens Before:
+a->b 
+"a could have caused b"
+"b CANT be the reason that a happened"
+-maybe, but also maybe not idk 
+
+Formal Definition:
+We say a ->b; that is a could have caused b.if:
+
+1). a and b occur on the same host, and a occurs first
+2). a is a message send and b is its corresponding receive 
+3). There exists c such that a->c and c->b. 
+
+Causality is reachability (in spacetime)
+
+Concurrency:
+
+if NOT a->B and NOT b->a, is that allowed? 
+
+"a is concurrent with b", but this is a weird and not really intuitive way of saying it
+"a is causally independent from b, and vice versa" 
+"a can't have influenced b, and b can't have influenced a"
+
+Why do we care if two events are concurrent (a || b)?
+-not worried about sharing fate 
+-race conditions!!
+
+
+Potential Causality is transitive? - Yes
+If a->b ^ b->c, then a->c
+
+Is Concurrency Transitive? No 
+if a || b ^ b || c, is a || c? 
+
+Not neccesarily. If we have computers X and Y, and process a followed by c on X, and b on Y, then a->c but a || b and b || can
+
+
+Delivery Protocols:
+
+Orderred Delivery:
+
+-FIFO Delivery:
+    - If a host h sends messages a, then b, any host delivering a and b delivers a first. 
+    - Pre -> Post, the above is an implication. Truth Table 
+    -A FIFO Anomaly is when the implication doesn't hold 
+        -anytime you see an anomaly, you know the property didn't hold 
+        -sometimes easier to visualize  property through an exception(anomaly)to that property \
+-Causal Delivery: 
+    - if a->b, then any host delivering a and b delivers a first. 
+    - 
+Property P1 is "stronger than" P2 i P1 -> P2 
+    - In a diagram, P1 would be a smaller circlce inside a larger circle that is P2
+
+Causal Delivery is Stronger than FIFO Delivery
+-Causal -> FIFO 
+
+Why study FIFO delivery then if Causal is stronger?
+
+-FIFO is much simpler guarantee
+
+Inventing a FIFO Protocol:
+1) What state is maintained at sender and reciever 
+2) How is that state modified when messages are sent and recieved? 
+3) What state is attached to messages
+4) When may a message be delivered 
+
+
+Terminology:
+1) Send - a client "fires off" a message
+2) Receive - a message "lands" at a host 
+3) Deliver - the receiving host " hands off" the message to a client 
+
+
+Our Protocol:
+Inventing a FIFO Protocol:
+1) What state is maintained at sender and reciever 
+- Sequence Number that sender and reciever are maintaining 
+2) How is that state modified when messages are sent and recieved? 
+-sender sends packets in order with sequence numbre(0-4 for instance) and reciever orders packets. It sends ack for each one, and repeats last value 
+-
+3) What state is attached to messages
+-sequence number is attached to messages 
+4) When may a message be delivered 
+-when it is the next in the sequence 
+
+
+One proposal:
+Send a log with subsequent messages saying to deliver previous messages first 
+So if sending a and b, just attach to the message b that a->b
+
+^very simple implementation that doesn't work in practical implementaiton, but perfect starting point 
+-For assingment3 start simple, and work up
+
+
+Second proposal:
+Send a, wait for ack from reciever, then send b 
+What is good about this
+-simple to implement
+-simple to convince yourself that its correct 
+-Issues: Slow 
+
+
+Third Proposal: TCP 
+-much more complex
+-allows sender to send all of the messages at once 
+-higher throughput in exchange for eating up state
+
+
+1) What state is maintained at sender and reciever 
+-n^2 state 
+2) How is that state modified when messages are sent and recieved? 
+3) What state is attached to messages
+4) When may a message be delivered 
+
+Orleans System: Microsoft Paper on a Peer-to-Peer system protocol that guarantees FIFO in a network of millions of users 
+
+
+Causual Delivery Protocol:
+Naive Approach: 
+Send Messages from before with your message to show causality explicitly 
+-works but only when N is relativley small, otherwise it gets out of hand 
+
+
+
+Logical Clocks:
+
+What is a clock? 
+-Concept to keep track of time 
+-something that marks regular intervals of time 
+A clock is a Counter that counts events 
+-send,recieved,
+-oscillations of a crystal
+-decay of atoms 
+
+
+Cardinality Abstractions on a clock won't neccesarily work for protocols 
+-if the point is to track what events have occured, then merley counting the cardinality of the st of events for each host will not suffice 
+-will for time, as time is marhcing forward(sort of )
+
+
+Relationship beteen memeory and # of elements 
+-Linear 
+Relationship between memory to store integer that tracks # of elements 
+-Logarathmic 
+-as you add more bits, can store exponentially many numbers 
+
+
+In this class will study Lamport Clock(LC) and Vector Clock(VC)
+
+
+Lamport Clock Definition:
+If a->b => LC(a) < LC(b) 
+    LC: event -> int 
+
+Vector Clock Defintion:
+a->b <=> VC(a) < VC(b) 
+
+
+What can we do with a lamport clock? Whats it for? 
+
+What if we have a and b and b saw a buying
+what if LC(a) = 7
+LC(b) = 15 
+B did not Cause a 
+Not sure if a -> b, cannot get that back from LC Counter. Can with Vector Clocks!

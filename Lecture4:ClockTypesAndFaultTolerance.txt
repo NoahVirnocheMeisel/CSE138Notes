@@ -1,0 +1,170 @@
+Agenda:
+Recap Delivery Ordering and Logical Clocks
+Today: Lamport Clocks
+       Vector Clocks
+       Fault Models 
+    Timer Permitting: Safety and Liveness
+                      Reliable Delivery 
+
+
+Logical Clocks Recap:
+
+Two Types we study: Lamport and Vecto 
+
+1). LC: a->b => LC(a) < LC(b)
+2)  VC: a->b <=> VC(a) < VC(b)
+
+Can you use a vector clock to reason about concurrency?
+YES!!
+Concurrency = NOT (a->b) ^ NOT (b->a)
+Substitute with VC 
+NOT (VC(a) < VC(b)) ^ NOT (VC(b) < VC(a)) => a || b
+-cannot simplify this to be equal!!!!!! 
+
+Example:
+LC(a) = 7
+LC(b) = 15
+
+What can we say about relationship between a and b
+
+B did not happen before a
+
+Proof:
+Assume b->a 
+Then LC(b) < LC(a)
+So 15 < 7, this is a contradiction
+
+So my assumption b->a must have been false, and therefore b did not happen before a
+
+---
+
+Cannot do the same to reason about a->b
+-a could be concurrent with b still, or it could be happens before relation 
+-we just don't have enough information with LC to reason about a->b 
+
+
+Questions a Logical Clock Must Answer:
+1) How is the clock state represented?
+2) How are events incorporated into the clock?
+3) How do we MERGE two clocks? 
+4) How do I compare two clocks?
+
+
+
+Basic Algorithm:
+Alice holds estimate of number of events that have happened, and so does bob
+
+Whenever Alice sends a clock to Bob, she includes her clock as a piece of metadata 
+-need a way to merge the two clocks that will be different 
+
+What counts as an event?
+-important for incoportaing the event into a clock
+
+Lamport Clocks:
+1) How is the clock state represented?
+    - Integer value
+2) How are events incorporated into the clock?
+    - Increment the counter by one 
+3) How do we MERGE two clocks? 
+   - PigeonHole: Have two integers, want to get both in the same hole? 
+            -If we sum, will always overcount 
+            - If we throw one way random, that is bad
+            - If we take the MAX -? under approximate
+   - For LC, we take the MAX of the two clocks
+4) How do I compare two clocks?
+   - <, standard ordering over natural numbers
+
+"2 pigeons, 1 hole"
+
+Application Specific Rules: Change on the scenario, not written in stone
+1) Send is the only event!!!
+2) Incremenet before!! Sending
+3) MAX(n,m) + 1 
+
+
+
+Vector Clocks(Vector as in a Fixed Size array of things]:
+1) How is the clock state represented?
+   - Vector of Ints 
+   -Each position in the vector corresponds to the clock of a specific location
+   -much more expressive
+      -implementation is probably a dictionary: {A:7, C:19, B:8}
+2) How are events incorporated into the clock?
+   - Increment the position of the host where the event happened
+3) How do we MERGE two clocks? 
+-Pair-wise max
+4) How do I compare two clocks?
+
+VCi - The ith position in VC.
+
+VC < VC' iff 
+For all VCi <= VC'i ^ There exists j such that VCj < VC'j 
+
+In english, if there eleements are all either equal, and at least one of the elements is greater
+
+If VC(a) = VC(b), then a = b (with the exception of the empty vector clock kind of but that isn't really an event)
+
+
+Causal Broadcast with Send as only event, and incremeent after sending 
+
+1). Perfect Information Protcol - SEND ALL OF THE EVENTS!
+
+2). Use vector clocks. Send is an event. Incorporate after sending messages.
+    Deliver a message with vector clock VC' when VC' <= VC (my local clock)
+
+
+VC(a) = [5 8 11]
+VC(b) = [5 11 11] a->b 
+---
+
+VC(a) = [5 8 11]
+VC(b) = [5 11 10] a || B
+
+
+Use of Lamport Clocks: 
+Low cost solution to rule out possible causes for something in a system
+
+Use of Vector Clocks:
+-sky is the limit, can basically figure out any causal influence depending on how much storage you want to commit 
+
+=======================================================
+Fault Models:
+-play a similar role as network models from week 1, but in terms of fault tolerance
+- not completley orthogonal
+
+Anything in a higher model also can occur in a lower model
+
+Nope Model: If a computer starts a computation, we know that it will 100% guaranteed happen 
+
+Fail-Stop Model: Machines may fail by crashing --> i.e, stopping 
+-externally, what it means to crash is that nobody sees anymore messages from you.
+-crashes can be detected? by any node.
+   -if the network is async, then there is no such thing as a fail-stop model 
+
+
+Crash Model: Machines may fail by crashing
+   -no way to for sure detect a crash in another machine 
+
+Omission Model: Messages may be lost 
+
+Byzantine Mode: Anything can happen. Computers can lie, deviate from protocl, hackers could be controlling the computers
+
+
+Sussy bacca 
+
+===========================
+
+Safety + Liveness: 
+
+1) Safety:
+   -"A bad thing never happens"
+      Won't fuck up
+   - A violation is always a finite execution 
+
+2) Liveness
+   - "A good thing eventually happens"
+   - Must do something!!
+   - Violations are INFINITE executions 
+
+Don't crash(safety) but you must eventually drive(Liveness)
+

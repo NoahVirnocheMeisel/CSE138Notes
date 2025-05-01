@@ -1,0 +1,211 @@
+Agenda:
+Recap: Vector Clocks, Lamport Clocks, Safety + Liveness, Fault Models
+
+Today: Reliable Delivery
+       Reliable Broadcast
+       Stacks + The KVS API 
+       "Ilities"
+
+Time-Permitting: Primary/Backup + Chain Replication (Assingment 2 Information)
+
+
+Assingment 2: Need to replicate KVS
+    -introduces hazards
+    - If a client writes a value, x = 1 to R1, and then tries to read value from R2 and gets unkown...
+    -test what happens with concurrent writes/reads etc
+    -if you don't have a guarantee of subsequent reads after a write being that value, whats the point of replication!
+Need to pick a particular replication strategy
+
+
+
+Recap:
+
+What is a Logical Clocks:
+Job is to count events 
+Why? : Reasoning about causality 
+1). Every host has a clock
+2). Clocks are atttached to all messages
+3). When messages are recieved, clocks are merged!
+
+
+VC can answer a -> b, v ->a and a || b questions 
+LC can only answer NOT (a -> b) and NOT (b -> a), so more restricted in their ability to help us reason about causality only in the sense of ruling out possibilies 
+
+Concurrency with VC
+NOT (VC(a) < VC(b)) ^ NOT (VC(b) < VC(a))
+
+Concurrency with LC 
+Can't reason about concurrency with a LC. 
+Relationship of the clock values doesn't tell you anything about concurrency, need stronger happens before relationships 
+
+
+
+Safety vs Liveness 
+
+"always", finite violation shows fault in safety 
+"eventually", infinite property to show it holds 
+
+
+FIFO Delivery - Safety Property 
+Causal Delivery - Safety Property 
+Total Order Delivery - Safety Property 
+
+
+Fault Models:
+
+Nope: Everything is fine 
+Fail-Stop: Computers can crash, and other computers can detect the crash 
+Crash: Computers can stop working, and can't detect reliably 
+Omission: Messages can not be recieved/be dropped, and also above 
+
+==================================================================
+
+New Material:
+Place ourselves in the omission model 
+-messages can be dropped, and not sure which ones and how many 
+-need  to write properties very defensivley 
+
+
+Alice trying to send "Hi Bob" to Bob.
+
+How can she guarantee Bob gets message 
+-can send infinite many times to Bob 
+
+Reliable Delivery Def:
+If A Sends a message M to host B, and not all messages are dropped, then B eventually delivers m 
+
+Protocol "Send the message infinitley many times" actually solves the problem, but not very efficient 
+
+Required in Omission Model and beyond 
+
+!)On send, the message is buffered
+2) Periodcally, send the buffered message
+3) Reciver ACKS
+4) Upon recieving an ACK, the sender deletes from the buffer
+
+This doesn't achieve "exactly once delivery", just moves us away from infinite delivery 
+
+what type of functions don't care about multiple inputs.
+-Shutdown, can do more than once because subsequent calls will do the same(computer already down)
+    -class: f(x) = f(f(x)) = f(f(f(x))) = ... Idempotent functions
+
+========================================
+
+Reliable Broadcast
+Crash Model
+
+Broadcast Definition:
+A message that is sent to EVERYONE!! Not Point 2 Point 
+
+Multicast is like broadcast but not everyone ,just more than 1 
+ 
+
+Reliable Broadcast Propety: 
+
+If a correct host delivers a message m, then all correct hosts deliver m 
+-correct in this model means a host that isn't crashed(in higher models other restrictions alter what our correctness definition is)
+
+If Alice sends a message to Bob and Carol, and Bob delivers but Carol doesn't then thats a violation of Reiable Broadcast 
+
+What is a violation? 
+-carol crashing before delivering is not a violation is carol is not a correct host in that case 
+-Alice crashing before sending to carol however ,is a violation
+    - broadcast is technically two events right after 
+
+Reliable Broadcast Protocol: 
+
+Upon recieving a message m, each host Broadcasts m, then delivers it.
+(if it has not already done so otherwise go infinite thats bad)
+
+
+Does this still work in the Omission Model? 
+-if we modify by using reliable delivery, then Reliable Delivery Broadcast Protocol will work 
+
+Is Reliable Broadcast a Safety or Liveness property?
+-could argue either way actually 
+
+=========================================
+
+The "Ilities"
+
+Durability: If a write (ie, a PUT) is ACKd at the client, then it is stored on at least one correct replica. 
+
+-not guaranteed until we recieve an ACK, and also not guaranteed to be what we wrote as another client could have written before we wrote 
+
+Inventing very basic and silly replication Replication protocol
+
+YOLO Protocol:
+Client sends their message to everyone, and declare victory as soon as a majority of the replicas respond with an ack
+
+Issue is that majority could all crash, and then we don't have it stored on a correct close 
+
+
+In the omission model, there is not an actual adversary, but we want to think about it in that way
+"what if my network was trying to kill me"
+
+
+Availability: Any replica can provide a client with a useful response. 
+
+A durable distributed network that is also available, is sort of impossible. 
+-an available system won't always be durable 
+-a durable system won't always be available!!!!
+-AHHHHHHHh
+
+
+Consistency: Just like asgn1
+    -want our distributed system to behave like a single computer
+    A system is strongly consistent if its externally-visible behavior is indistinguishable from a non-replicated system. 
+
+Hard to satify availability and consistency at the same time 
+
+
+The KVS API: 
+A single-host program K.
+
+
+Consider: An abstract function R (for "run") 
+    R(K, I) -> Set of runs
+    K = program, I = input
+
+A run is sort of like a lamport diagram(the timeline thing)
+-tells you what responses a client might have seen 
+-expect to have multiple different outputs in the set of runs 
+
+A replicated implementation of the same API(supporting gets, puts, deletes), D 
+is strongly consistent iff: R(K, I) = R(D, I)... this is too strong of a Defintion
+                                    = Its engough for R(K,I) to be a superset of R(D,I), e.g R(D,I) is a subset of R(K,I)
+
+                                    Can't prove they are not the same if its a subset 
+
+Assingment 2:
+
+Will be asked to provide a database with Durability and Strong Consistency
+
+Two Common Replication Protocols that are both good choices for Asgn2:
+
+Primary/Backup:
+C P B1 B2 
+
+P = Primary, single database 
+
+Client sends puts and gets to the primary 
+When it gets a put, it sends messages to replicas to the replicas, and then they respond to the primary 
+-once the primary gets response, from ALL the backups, it sends response 
+
+When it gets a get, it can just send response 
+
+
+Chain Replication:
+Replicas are arranged as a linked list 
+Puts are propogated down the chain until you hit the tail, at which point the Tail sends ack to the client 
+
+Gets can go directly to the Tail 
+
+How does client know where to send request
+-method of discovery will notify the client 
+
+
+If client is external, sends requests to a random node, the node forwards to correct node
+-can lead to variance in timing, but we are in asynch so doesn't impact indistinguishability 
+
+-if a single host goes down in our protocol, we must halt as its not safe at that point(for asgn2 scope)

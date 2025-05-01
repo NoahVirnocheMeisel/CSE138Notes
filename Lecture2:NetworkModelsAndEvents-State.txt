@@ -1,0 +1,227 @@
+
+Agenda:
+Recap: Network Models(Async,Synch)
+Today: Event's and State
+       Time/Space Diagrams
+       Potential Causality 
+       Intro to Delivery Protocols
+
+
+
+Networkmodels going to be on exam most likely based on freqeuncy he has mentioned it Network
+-hint going forward is if he goes over something multiple times expect it to be a question/topic on the exam
+
+
+Flask might be bad idea, might want to familiarize myself with Asynchronous framework 
+-Did this, FASTApi the GOAT
+
+Recap of Last Lecture:
+
+Distributed Systems charecterized by uncertainity 
+-order and time
+-faults and partial faults
+
+Given some deterministic program P that takes in 1, we expect the same output
+
+Example:
+Sum(1,2) -> 3
+
+In distributed systems, we model P off of input i and Environment E 
+
+P(i,E) can have multiple outputs ignoring the environment 
+-we want to reason about what values E can take on, and use that to inform what can go wrong
+
+Models: 
+Syncrhonous and Asynchronous network models 
+
+Synchronous: 
+There exists some upper bound T on timing, such that no message will be recieved in time greater than T, 
+and such that no computation will take longer than T 
+
+Can solve partial failure due to this property
+Can set a timeout to upper bound of all of our interaction(send message, computation from bob, and bob sends message) 
+to like 3T and if that elapse we known Bob went down. 
+
+
+Asynchronous:
+There does not exist any upper bound T on timing. 
+
+Any time we take to wait for timeout, there is potential that the operation being waited on finishes right after the timeout 
+
+Is it bad to incorrectly conclude a node is down? It depends?
+
+Example:
+Two computer system running a plane flying program 
+
+Head and backup. If the head goes down, backup should take over.
+
+If backup incorrectly concludes the head is down, we get....
+
+"Split Brain" effect
+
+
+Which model is better?
+Synchronous is more ideal, and Async is more harsh.
+Reality is somewhere in the middle, but using async allows us to ensure our design works in the worst case 
+
+Impossibility Results:
+-2 generals 
+-FLP - voting thing 
+-CAP result - consistency or availability not both 
+-Choroon-Bost
+
+Impossibility results remove a massive blob from the set of all possible protocols/designs 
+-creating a protcol is just one element in the set 
+-impossibility results are massive black hles over the set 
+
+
+!!!To prove an impossibility result, we use Syncronous model because if its not possible in the easiest conditions then in any harsher model is also not possible 
+
+!! To prove a protocol is correct, we want to prove it in the Async Model as then it will work in the sync model as well 
+
+
+Aside on Uncertainity:
+Why is there uncertainity in a network?
+-multiple routers, more than one route usually, size of a message impacts routing time, congestion,
+-lots of stuff outside our control
+
+Usually, we can avoid unceratainity and gain 
+
+
+Events and States:
+
+Event:
+Something that happens at a particular time at a particular place
+
+
+There is an important relationship between events and state 
+
+What is the state of a computer?
+All of the things that hold information in our computer 
+-we are who we are because of what has happened to us -philisophical explanation 
+
+The explanation for why a computer is in a particular state is due to:
+-events up to e1
+-order of events up to e1
+
+Example:
+EventA: x = 1 
+EventC: x = 7
+order of a and c leads to x being 1 or 7 
+
+
+Primary Backup overview:
+
+
+Space/Time Diagrams:
+
+Give us an x/y axis approach to modeling systems
+
+DAG: Directed Acyclic Graph 
+-time marches inexorably forward
+-can't have the result of an event trigger that originaly event
+
+
+
+Causality:
+Alice is hanging out and suddenly has a tummyache.
+Shortly after, ate a warm sandwhich
+Shortly before, drank a beer 
+
+The sandwich couldn't have caused the tummyache, as it happened after.
+
+
+Continued--....
+
+Bob told a gross joke at some point in time before tummyache 
+
+Poset, or partially ordered set, is  a set S, with a binary operator <+ 
+In a partially ordered set, given some elements you can compare them. But in other cases you can'T
+In contrast to fully ordered set 
+
+
+
+Given two events A and B, we sometimes can say A caused b potentilaly or B happened before a, or sometimes neither
+
+
+Going back to Alice/Bob example, bob laughs at their own joke 
+
+
+
+Big takeway:
+Potential casuality is just reachability, in Space/Time 
+
+happens before: shorthand for potential causality 
+
+happen in the sense of has potential to cause the thing
+
+
+Full defintion of Potential Causality:
+
+The "happens before" relation AKA Potential causality --
+We say a ->b; that is a could have caused b.if:
+
+1). a + b occur on the same host, and a occurs first
+2). a is a message send and b is its corresponding receive 
+3). There exists c such that a->c and c->b. 
+
+
+
+Did x happen before y (x->y) Yes obviously
+x -> q? 
+-cannot reach q in the timeline, so x did not happen before q 
+z -> q
+-cannot reach ...
+q-> y 
+-can only go down, so also didn't happen before 
+
+
+
+Causality Impact on Programming:
+-debugging!
+    -there must be reason for weird output 
+
+IF a-/>b and b-/>a => a || b 
+
+"a||b" means "a is conccurent with b" 
+
+concurrent-nothing to do with real time, but more just happens in same period of uncertainty? 
+
+Happens before will probably be on the final almost certainly
+
+
+
+
+
+Delivery Properties:
+In an Async Network:
+-can't control the timing, and thus it is difficult to control the order in which events are triggered 
+-ideally want to have things ordered, through a protocol 
+
+before creating a protocol, it is useful to define the properties we want our protcol to achieve 
+
+Example:
+FIFO Delivery:
+{If a host x sends messages a, then b to a host y,}then y delivers a first 
+Antecedant                                          Post-Condition 
+If-Then relationship 
+
+Only case where implication is false and its the case where the PreConditon is true and the post condtion is false 
+All other cases the property still holds 
+
+IF at least one host is up then get shit done 
+-realistic correctness property 
+
+
+When we have an exception, we say its a PROPERTY NAME anomaly or a witness 
+
+FIFO delivery protcol is not sufficent to prevent the Fuck you Alice diagram example 
+
+
+
+Causal Delivery:
+If a->b, then any host delivery a+b delivers a first 
+
+
+
+

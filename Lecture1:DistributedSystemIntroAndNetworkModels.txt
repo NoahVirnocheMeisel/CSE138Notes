@@ -1,0 +1,174 @@
+Distributed Systems:
+-What?
+-What's Wrong?
+-Why?
+Course Organization/Expecations
+Network Models
+
+---------------------------
+
+Attendance:
+QR code that will be posted in class at the start like once a week(every other class or so)
+
+
+Distributed - requring cooperation of multiple different computers 
+
+Origin of Class:
+Distributed System Class is first of its kind of a way
+-why?
+It's a newer topic
+Also the common thinking was that distributed systems and it's complexty could be ignored
+-abstracting through the stack
+
+Issue is that distributed systems are everywhere and our problems are charecterized by uncertainty 
+
+Example: 
+Timeouts - checking clock and seeing if thing has happened within a certain time period. If it hasn't occured in speciifed time range, move on 
+-leaks throughout the stack 
+
+
+Distributed Systems:
+Leslie Lamport Quote: A distributed system is a system in which the failure of a computer I didn't even known existed can render my own computer unusuable 
+
+What is it?
+Set of machines that interact to compose one system
+- Multiple Distinct Things that can't be completley independent of each other
+- they must communicate 
+- Asynchrony, or Uncertainity regarding timing 
+- Computers might not agree 
+
+Different from threads in that we assume there is no common resource, wheras in threads we have shared memory 
+
+Big Words: Asynchrony!! Partial Failure!!
+Other Words: Set, Interact, Communicate
+Extrinsically-Distriuted vs Intrinsically Distributed 
+-We have decided that we want to run programs orignally designed for one computer on multiple computers acting as one computer 
+- Read first chapter of the book for more 
+
+Partial Failure: Uncertainity regarding who is up
+
+Example: If a part of your computer fails, you known because your OS stops working. You KNOW it doesn't work, there isn't UNCERTAINTY 
+
+In a distributed system, if some of the computers fail we don't really have a good way to neccesarily know it stopped working if we get an answer back!!
+
+How Google Works and Partial Failure:
+-back in the day at least, google search would change if a computer went down
+
+Why Distributed Systems are so Complex Aside:
+Suppose we have Alice an Bob communicating on time diagram
+
+Alice and Bob are communicating
+Alice getting bobs help
+If Bob crashes, Alice needs a way to determine if Bob is up 
+
+Way to think about timeouts: Send a message to yourself that arrives in like 5 seconds, and if it arrives before ack we can assume request will not resolve 
+
+Polling: Sending Are you Up requests
+Heartbeating: Bob sends constant messages saying "I am up" 
+
+
+Issue with timeouts is that we don't neccesarily know how long Bob will take to get back to you
+Can lead to a False Positive, which is very bad 
+
+
+Summary of this discussion - computers need a mechanism to detect when a computer has gone down 
+
+There is NO SUCH THING as a perfect failure detector 
+
+Question: Can you send out a message before crasing
+-sort of, because many failures can actually be predicted and you can usually tell when a computer is about to crash 
+-not 100% reliable still, but can help and inform design 
+
+
+
+Given all of the above...why would I distrbite my system:
+1. More resources => do more, faster 
+2. Cheaper to scale out horizontally than to scale vertically 
+3. Data Locality, making your data closer to the end user - Content Delivary Networks
+4. Fault Tolerance - the flipside of partial failure. If we add machines that are all interchangable, probability of failure/losing all of data is P^3!!! Exponetial decrease in failure. HARD THOUGH
+5. Speedup, Scale-Up
+
+Relationship between number of cores and cost is sort of exponential, wheras buying more PCs is linear
+You save money by just expanding horizontally
+
+
+Speedup/Scale-up:
+
+Speedup-Given a program P, as I add cores how much faster can I make P go? Omhdals Law
+
+If I think of P as a part S and P where S can't be parrallized, if we have infinite cores the runtime becomes S, our asymptote...
+What is S? Data transfer, initalization of resources. The fundamental overhead to programs 
+
+
+ScaleUp-Data you need to process increasing. Question is as data size increases, can I increase my computers as well to achieve the same speed as before 
+
+
+
+Class Organization:
+
+Modlules/Themes of the Class: 
+All four sort of blend into each other 
+1). Time and Asynchrony 
+-one of the most important ways DS differ from traditional systems is how they interact with time and uncertainty 
+2). Partial Failure and Fault Tolerance 
+-Redundancy: important but very hard to get right and leads to concerns regarding consistency...
+3). consistency
+4). Scaleup/Scaleout 
+
+
+Projects: 
+4 Assignments 
+key/value store implementation
+Distribute it 
+Replicate it and replicate it 
+-strongly consistent way at first 
+-later will be asked to implement weakly consistent key/value store; faster
+Partition:
+-allow the data to be
+
+
+
+Assingment 1:
+Implement a Key Value Store that can be run on One computer 
+
+Assingment 2: 
+Implement a Key Value Store that can be run on multiple computers and interact so that a client sees it like its a regular key value store 
+-issue is if one node goes down than it can't do work
+
+Assingment 3:
+-same as 2, but not strongly consistent so if a node goes down/can't communicate user can still interact 
+
+
+Assingment 4:
+Take weakly consistent KVS and partition the data across multiple computers 
+
+Expectations:
+Project Centric Class where the projects are challenging and take time 
+-implementation and design is up to students
+-all testing over HTTP, and using Dockerfile
+-langauge up to you 
+
+Go to OH !!!! TALK ON DISCORD!!!
+
+
+Network Models Introduction: 
+
+A modal is a window on the truth of some design or system that encapsulates the qualities of that system the designer considers to be most important
+
+
+Models for this class
+1). Synchronous Network Model
+-There exists an upper bound, T, on how long 
+ it takes for 
+ 1). A message to be recieved, or 
+ 2). A computation step to complete 
+ - In this model we can solve the partial failure issue 
+ - Issue is it doesn't really reflect reality 
+
+2). Asynchronous Network Model
+- No T exists. 
+ 
+
+
+
+

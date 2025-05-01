@@ -1,0 +1,209 @@
+Agenda:
+Recap: State Machine Replication, Total Orders + Strong Consistency 
+Today: Conflicts
+       Quorum Replication
+       CAP Theorem
+       Eventual Consistency 
+    
+
+
+Midterm Logistics
+
+Show that you know the answer
+Address the how and the why if the questions ask for the how and the why
+90-minute exam, but usually timed for 1 hour so time shouldn't really be an issue
+Don't panic if you finish early, but also take your time 
+6 Pages roughly of questions(but most are writing)
+
+
+STATE MACHINE REPLICATION:
+-Oracle Maintains a counter 
+-Client requests a ticket from  the oracle, then attack it to reads+writes
+-The tickets establish the total order over operations
+
+TOTAL ORDERING:
+
+Total order of writes determines the value on a single computer 
+
+In Primary Backup, the PRIMARY establishes the total order similar to the oracle in state machine replication 
+
+In Chain replication, the head maintains a total order on writes. 
+The tail EXTENDS this total order into a total order over reads and writes(decides where reads occur in relation to writes)
+
+In State Machine Replication, the ORACLE decides the total order through tickets
+
+
+RELATIONSHIP BETWEEN TOTAL ORDER AND STRONG CONSISTENCY:
+
+Total Order implies strong consistency 
+Strong Consistency does not neccesarily imply total order 
+
+
+Example where two replicas end up with x=1 and y =7, but they get the values in different orders 
+
+1). Does this violate totally ordered broadcast? Yes!! Order on one host was x=1, y=7, but on other host order was flipped. This violates Total Ordering principle. 
+2). Does this violate strong consistency? 
+Discussion:
+What if we read y from the replica that hasn't had value updated? this could still happen in a normal system, so ok 
+
+What if we read y from each server in a way that gives us y=7 and then y is 404 not found? Issue 
+
+Point though is at the end result is the same
+
+
+BETTER DEFINITION FOR STRONG CONSISTENCY:
+
+Strong Consistency Reqesres a T.O Over conflicting operations? nah 
+
+CONFLICTS:
+
+Two operations a,b conflict if:
+1). a occurs, and 
+2). had b occured first the outcome (final state of the replicas, the values returned by reads) would have been different
+
+
+3 Kinds of Conflicts:
+1). WW 
+2). WR 
+3). RW
+
+Better more straighforward Defintion!!!!!!!!!!!!
+Two operations conflict if:
+1) both reference the same variable
+2) AT LEAST one of them is a write 
+
+
+Even this defintion is two strict 
+Consider x=x+1, x=x-1, x=x+5
+Order here does not matter at all, despite all three being writes 
+
+
+PHD Defintion
+Strong consistency requires a T.O over non-communative conflict operations
+
+Also consider shopping carts where you add items to a cart. Don't need total ordering of adding items to cart, just need checkout to occur after all items added
+-noticing things like this helps write faster software 
+
+
+
+QUORUM REPLICATION:
+
+Very very very very complex:
+-going to gloss over it here, as it could be an entire class in itself 
+
+-Clients connect to MANY replicas
+-Reads complete when clients receive an ACK from R(configurable number) replicas
+-Writes complete when we receive an ACK from W replicas 
+
+
+Some Possible Configurations 
+
+A
+N = 3
+R = 1
+W = 3 
+
+B
+N = 3
+R = 2
+W = 2
+
+C
+N = 3
+W = 1
+R = 3
+
+D
+N = 3
+W = 1 
+R = 1
+
+
+In QUorum, because clients doing most of the work the replicas are not really special
+
+
+In A, the client can do writes and waits for 3 acks before resolving the write. Only needs one ack for a read
+It's like primary backup, but the client is the primary
+
+ALWAYS strongly consistent because N = W 
+
+In D could run into issues if we write to a replica, get ack, then read from a different one before it's resolved 
+
+
+Given some N, there are settings of R and W that will yield strong consistency, and also settings  that will not
+
+
+What about C
+
+WR might be okay for c
+But WW will break 
+
+What about B:
+Any read will overlap with any write
+
+
+
+Ok what do R and W need to be to ensure strong consistency than?
+
+Reads  1) R + W > N 
+writes 2) W  > [N/2]
+
+This configuration ensures that ANY two conflicitng operations will have a node in common, which ensures that we can resolve the operations in a strongly consistent way 
+
+
+Interesting:
+A and B are both strongly consistent, but different? Does this difference matter?
+
+A is a pattern called Read 1, Write All 
+-in most systems reads are most common 
+-this pattern can be most effective in these situations. Slow writes in exchange for very quick reads 
+
+
+B is a more balanced pattern 
+-can make progress if a node goes down for both reads and writes
+- people refer to R and W as "knobs", but this is misleading as you are either consistent or not
+
+
+In the weakly consistent C and D models
+
+Which is better? D is much more available. So might as well go with D if you are taking weak consistency 
+
+
+Strong Conssitency:
+At higher values of N, there can be more than one node in the overalapping requests 
+-can have some very weird stuff happen that we aren't really able to fully cover as said above 
+-in class went on a 7 mintute descent into insanity with lots of circles and bubbles 
+
+
+
+CAP CONJECTURE/THEOREM:
+
+3 Desired propertys of any replicated system 
+
+1) Consistency(Strong)
+2) Availability
+3) Partition-tolerant(works correctly even in the prescence of partitions => paritions can happen)
+       -you really need this property because we are in the omission model, so really picking between 1 and 2 
+
+Pick 2(really pick 1 as you NEED 3)
+
+
+
+Consider two partitioned nodes A an B 
+
+Write x=1 to A, and R(x) from B 
+
+What can B say in response to a Read(x)
+
+1). 0, (A, Not Consistent)
+2) "Go ask Alice" ok thats not useful, and alice could say go ask bob
+3). Do Nothing (Not Avalable, Not consistent)
+
+Exhaustion 
+
+
+EVENTUAL CONSISTENCY:
+Even if we scede consistency, we want things to advance towards some convergent state.
+
+If the replicas always diverge and never agree, then whats the point of rememembering what people wrote 
+
