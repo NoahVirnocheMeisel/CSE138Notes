@@ -1,0 +1,103 @@
+"Forlorn Hope" Day 0_0 
+Agenda:
+Midterm Review
+Recap: Weak Consistency - Actually not, just revisit lecture 9 notes(Convergence, Read Your Writes)
+Today: the agreeement Problem
+       Atomic Commitment
+       Two-Phase Commit
+       Leader Election 
+
+
+
+Midtem Recap: 
+
+Crash Model contained in omission model:
+
+Was looking for an explanation of what that means, specifcally that anything in the crash model can happen in the omissoin model, but not the other way around 
+
+-Cant just say its bigger, need to illustrate an example 
+
+
+Nope Model= absense of a fault model 
+
+
+Strong Consistency a saftey or liveness property:
+Can show a finite execution where you get something tha
+
+
+
+Quorum Question: 
+
+How does it establish total order 
+-could have just written the rules!! 0_0 
+-could have said it was not strongly consistent as rules don't apply 0:0
+
+
+
+Causal Ordering violation but violates FIFO
+-BOB SMELLS Example
+
+
+VIOLATES TOTAL BUT NOT Causal
+-4 line thing I originally drew but went insane 
+
+
+Broadcast thing, A crashes before sending second message so C doesn't deliver 
+
+
+If B crashes after delivery, is it a correct process?
+-up to debate basically 
+
+
+If you think an answer is correct but lost points talk in OH about it?
+
+
+Weak Consistency Recap:
+
+Convergence:
+Eventual Consistency, e.g eventually all machines will converge on the same value after all operations cease 
+
+Read Your Writes:
+After a client writes data, if there are no other writes after, any reads by that client will read that same data 
+
+
+Causal Consistency is a stronger version of Read Your Writes... (Quiz question)
+
+
+========================================
+
+Agreement:
+Not easy to achieve 
+
+Strongly Consistent Replicated Systems:
+Intrinsically vs extrinsically D.S - definition of consistency is going to be different depending on which you have 
+-extrinsically distributed means that the distribution isn't fundamental to what we are
+    -vending machine state machine: originally meant to run on ONE computer. So strong consistency is comparing this to regular vending machine 
+-intrinisically: no single computer version, e.g peer to peer systems
+
+
+Correct Replicated Systems often appear to be a single computer
+
+
+Agreement:
+If we can figure out a protocol to get a bunch of computers to agree on one thing, then we can establish total order 
+-hard to do(and must be hard otherwise why both with primary backup)
+
+To get primary backup to work and be available, we need an oracle to get all of the computers to agree that a computer is down
+
+How can we get oracles to work and reconfigure itself if computers that make up the oracle crash 0_0
+
+
+
+Agreement Properties:
+
+1) Agreement
+If a node decides a value v, all nodes decide v.
+SAFTEY PROPERTY
+2) Validity
+If a node decides v, v was among the inputs 
+3) Termination 
+
+Abstract picture of Agreement Problem is lots of things go in to a black box, and one thing comes out 
+More real, is we have A B and C and each are their own computer. Each reads input, and each should return the same value 
+

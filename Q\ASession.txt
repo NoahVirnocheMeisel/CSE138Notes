@@ -1,0 +1,9 @@
+How to ensure a system has consistency and partition tolerant
+-A strongly consistent system is partition tolerant by simply not doing anything if partition created
+-P B1 B2 | B3 B4
+-primary can't talk to B3 or B4...
+-just gonna stall out
+partition tolerant tecnically 
+P in Cap is a weasle word(need to allow partitions in omission model)
+
+
