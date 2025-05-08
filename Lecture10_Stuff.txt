@@ -91,13 +91,134 @@ How can we get oracles to work and reconfigure itself if computers that make up 
 
 Agreement Properties:
 
+Abstract picture of Agreement Problem is lots of things go in to a black box, and one thing comes out 
+More real, is we have A B and C and each are their own computer. Each reads input, and each should return the same value 
+
+
+
 1) Agreement
 If a node decides a value v, all nodes decide v.
+-ambigious wording
+If nodes n1, n2 decide v1, v2 respectivley, then v1=v2. 
 SAFTEY PROPERTY
 2) Validity
 If a node decides v, v was among the inputs 
 3) Termination 
+All nodes eventually decide 
 
-Abstract picture of Agreement Problem is lots of things go in to a black box, and one thing comes out 
-More real, is we have A B and C and each are their own computer. Each reads input, and each should return the same value 
+
+Unfortunate thing is similar to CAP theorem we need to pick 2 of these
+-Fisher, Lynch, and Patterson(FLP) Impossibility result 
+
+Flavors of Consensus feel like CAP as well
+Can do something that is always correct but could never terminate, or can do something that is not always correct but will always terminate 
+
+
+Recovery in Replicated Systems
+Primary Backup system where primary crashes after write, and before hearing back from backups . Only send message to B1 and not B2
+
+Oracle exists:
+Creates a new view with just B1 and B2
+
+Needs to make one of the two nodes a primary 
+Lets say it nondeterministically chose primary 
+
+B1 thinks x =1 
+B2 thinks x=NULL 
+
+If we make B1 the primary, B1 thinks x=1 and tells B2 
+If we make B2 the primary ... it doesn't know about x 
+-just need to rollback with timestamps 
+
+Takeaway:
+Recovery in Replicated Systems is easy
+
+Not all things are easy to undo
+-easy to break a window, hard to unbreak 
+
+Issues: 
+1) Uninvertible Actions 
+-messages are uninvertible
+-effects that escape our scope, e.g go to client
+
+What if we could tell the client an ack before sending message to backups
+-contained in a box
+-contains a pact basically saying if i crash then you must also crash
+    -promise/future async programming
+
+
+
+
+
+2) Compound Actions 
+
+Alice and Bob Example:
+
+
+Alice and Bob are married with separate checking accounts
+
+
+Alice has $50
+Bob has $10 
+
+Transfer $25
+-Compound Operations
+-substract $25 from Alice, Add $25 to Bob 
+
+
+On a single computer, how do you stage work
+-Stage = See if you can perform this operation, and be ready to perform it when I tell you
+
+Shadow Staging in Single Computer System Programming
+
+Say we have a page P with $10 in it 
+Make a copy of P, P'
+
+We have a pointer to P 
+No pointer to P' , which we can use as our scratchpad
+-if it works and we're ready, just swap the pointer
+    -guarantee of hardware is we can atomicly write 1 word at a time 
+
+
+In distributed, we have a coordinator who tells A and B  to push their staged commit basicaly
+
+Coordinator(primary in PB) sends Prepare(T) to backups
+If it gets ALL yes votes from the backups, end of phases 1,  broadcasts commit message andthen gets acks, end of phase 2
+
+Jim Gray; The two phase Commit protocol is much like a marriage ceremony. 
+
+"Do you take..." If both say yes, minister says I now pronounce you. If even one says no, minister says go home not happening 
+
+
+State Machines:
+
+Coordinator:
+Initial Sate -Client message-> Preparing State
+
+Preparing State --No--> Abort 
+Preparing State --AllYes->Commit 
+
+Participant Staging:
+I --Prepare-> Stage 
+
+Stage --Fail--> Abort 
+Stage --Success->Wait 
+Wait --Nope->Abort
+Wait --Go Ahead-->Commit 
+
+This protocol choose agreement and validity, forgoes Termination
+Worried about the Preparing state and the Wait state 
+
+
+Faults: 
+
+1) Message Loss? Reliable Broadcast 
+2)Participant Failure 
+-could suspect a crash(timeout) and just send abort message 
+-even if "crashed" node is just being slow and message eventaully arrives, aborting is "fine" - put in a pin in this 
+-this is called Unilateral Abort 
+3) Coordinator Fails -_0 
+-Unilateral abort will not work
+-will discuss after next week. Mega cliffhanger omg next time on Distibuted Systems whoooooo 
+
 
