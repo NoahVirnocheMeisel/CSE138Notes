@@ -1,0 +1,155 @@
+Agenda:
+Consensus Problem
+Paxos Protocol - solves consensus problem
+
+
+Recap of Tuesday:
+
+2 Generals Problem
+-2 generals want to simultaneously attack
+
+Fault Model: Omission
+
+Want to both agree that they are ready to attack
+
+Zod and Motors want to attack together
+-if they go alone they die
+Zod only attacks iff Motors will attack
+Motors will attack iff Zod will attack
+
+
+If either tries to exchange messages with the other saying “attack at dawn”
+
+Zod -> Attack At Dawn -> Motors 
+Motors -> Ok -> Zod 
+Zod ->Ok Ok -> Motors 
+
+
+Assume we have some protocol P that solves 2G problem
+P uses k rounds of messages to solve the problem.
+
+Lets say these values exist. In the omission model, there exists an execution where all k messages drop.
+
+
+Chart of Overlapping Protocols
+
+We studied protocols that agree and are valid but might not terminate which is 2 phase commit
+
+We studied valid and always terminating protocols that might not agree, which is leader election protocols
+
+Another family of protocols is Failure detection which is similar to leader election(the opposite almost)
+
+If we have a solution to failure detection, we can detect who is down, and then select a special node(based on ID) from the nodes who are down. 
+
+Some node that isn’t down
+
+
+2 Phase Commit Not terminating
+
+Occurs if coordinator is down and a participant is down, and all of the nodes that are still up are yes
+
+
+Leader protocol violates agreement in partition
+
+
+
+Consensus:
+
+Version of the agreement problem
+-solves Agreement always, solves Validity, and termination when it can(but not always)
+-also no single point of failure
+
+
+Roles:
+
+Proposers (kinda like coordinator)
+-need to be able to propose anything
+
+Acceptors (kinda like participant)
+
+Sort of like agreement problem but we can still make progress even if nodes go down
+Assume nothing will fail right now
+
+Paxos Derivation
+
+Strawman 1
+
+Simple way to achieve agreement/termination?
+
+Three computers
+1 Proposer
+-nothing to conflict
+-suggest cat, and the accepters both accept cat 
+-validity, agreement, and termination 
+
+
+
+
+A could fail. Could violate agreement => There must be > 1 proposer and > 1 acceptor
+
+
+If there is > 1 accepter how do we know when a value is chosen?
+
+When it is accept by any acceptor?
+Wouldn’t work. Partition can lead to violating agreement
+When it is accepted by all acceptors 
+Wouldn’t work, would lead to termination issues
+When it is accepted by a majority of acceptors
+
+
+
+
+Vocab:
+Decide/Choose - The consensus system agrees irrevocably 
+
+Accept - Tentatively choose 
+
+
+
+There must be > 1 proposer and > 1 acceptor. Values are chosen(decided) if accepted by a majority 
+
+What values do acceptors accept? 
+1). Accept first proposed value 
+	-could violate termination
+2). Last Value?
+	-doesn’t make sense? What is the last value?
+3) All the values?
+	-need to be willing to change mind if things come up 
+
+
+
+Idea: 
+Use a 2 phase protocol 
+
+Before going and trying to get people to accept a value, first do a phase 1 to do “recon” to all of the acceptors seeing if they have already accepted something
+
+In phase 1, discover if a value has been accepted. If so, propose that value in phase 2. Otherwise, propose whatever you like
+
+Issue is that timing can lead to an issue
+E.g if both do phase 1 with x=1 and x=2, then propose their values… :/
+
+
+Idea: Establish an ordering(numbers) over the proposals!
+
+Number each proposer's attempts! To get a value accepted:
+
+Each gets a higher # 
+
+P1 P2 P3
+
+How do we choose proposal #s?
+
+Requirements:
+
+Each proposal # must be globally unique!
+-monotonically increasing
+
+Proposers propose value with counter
+
+Accepters reply with their status. If first proposal, respond with “no knowledge”
+
+When a proposer has received a majority of responses that are empty,
+
+Can now tell them to do the thing (accept with 0.1 value, x=1). If someone else tries to propose a value with a code higher than 0.1, they will reject). If they accept, they reply with the highest number accepted
+
+Need to go through lecture and flush out notes still

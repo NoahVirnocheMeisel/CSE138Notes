@@ -1,0 +1,173 @@
+Agenda:
+Let's catch up a little 
+Paxos Paxos Paxos 
+Non-termination
+"Multi-Paxos"
+Totally-ordered broadcast 
+
+Asgn4:
+Need a week and change to complete
+
+Asgn3 - most people didn't get causal consistency working
+
+USE THE TIME!!
+-won't be testing causal consistency as hard for asgn4 but it still needs to work for basic cases of causal consistency
+    -if didn't do great on asgn3 need to fix for asgn4 
+
+
+
+Partition Discussion quick:
+Hashing with mods to partition
+Downside is if we want to add a machine, need to recalculate ALL of the hashes and mods
+-will talk about more placement functions that are better than hashing on Thursday(lecture14)
+
+
+
+Paxos:
+
+
+Rules:
+Safety {Agreement 
+       {Validity 
+Termination } Liveness Property
+
+Roles:
+Proposer
+Acceptors 
+-Listeners-
+
+1) 2 Strawmen Proposals 
+    1 Proposer 
+    -if only 1 proposer then if it crashes we are stuck and won't terminate :/
+    1 Acceptor
+    -don't care if there are multiple choices, but crashing and having new acceptor come online could violate agreement 
+    "its like the sperm and the egg"
+    =>
+    Must use more than 1 proposer and acceptor 
+        -much harder to satisfy agreeement now but neccesary 
+
+If there is more than acceptor, when is a value chosen(decided)?
+Majority!
+-if only once, violates agreement potentially. If all need to accept, then might violate termination
+------------
+Which value(s) are chosen?
+Could accept first value, last value received, or ALL values recieved
+Last value is not well defined...
+Why does first value not work?
+Split vote: A1 accepts cat, A3, accepts dog, and then A2 accepts pig (1 proposer for each acceptor)
+    -stuck :/
+So risks non-termination 
+ALL is therefore the only logical solution but doesn't work without tweaking
+-why do we not like this though
+-if things are chosen once a majority is accepted, then how do they know that its accepted though...?
+    -only god(overseer) knows
+-whats to prevent some 2nd proposer from proposing to a majority of nodes that then creates two different chosen values
+
+Need to utilize a two-phase commit on the proposer side
+Do recon first to see if nodes(which nodes?) have accepted a value.
+Issue is concurrent proposals...
+If two proposers do recon at the same time, then we are lowkey cooked 
+need to give the acceptor a way to break the tie 
+    -establish an ordering over the proposals(timestamp or something)
+Requirements: Globally Unique 
+
+-monotonically increasing 
+PN = 0
+PN = PN + 1 
+-call each iteration of the PN a round
+-salt in the Node ID to ensure they are not unique
+-the MSB PN side still dominates, and 2^node bits are skipped on each clock tick to ensure there will never be ties
+
+PN | Node Id 
+
+
+
+Full Protocol Description:
+
+Proposer Variables:
+minProposal - the smallest proposal I will accept (maxPropsal would be a better name. It's )
+acceptedProposal - the round # of the proposal I have accepted, if one exists
+acceptedValue - The value of that proposal, it if exists 
+
+Assume proposer already knows the value it wants to get accepted
+Proposer Logic: 
+1.
+Choose a round number N (eg, 0.1) - the zeroth proposal of node 1 . Next attempt would be 1.1, then 2.1, etc 
+Broadcast Prepare(n) to acceptors  => Acceptor Logic 1
+2.
+When reponses are recieved from a majority of acceptors continue
+if any acceptedValue/acceptedProposal were returned(not NULL?), update out value to acceptedValue associated with the highest acceptedProposal 
+Broadcast Accept(n, value) => Acceptor Logic 2 
+------
+Why do we care about highest acceptedProposal
+If P7 does recon and gets 0.1, Cat and 0.2, Dog then P7 should make its value Dog
+-----
+3. 
+Proposer needs to check if the number returned is our number N or if its getting ignored
+when responses recieved from majority, if all acceptors returned N , then Value IS chosen!!
+otherwise return to step 1 and pick a new n
+-pick new n(max of our number and returned number)floor + 1 + NodeID as a decimal
+    -if our n was 27.1 and returned was 256.7, our clock should be 257.1 
+-always need to go as soon as we get majority!! Can't wait even if waiting a few seconds would have gotten us agreement.
+    -waiting could lead to non-termination
+
+Acceptor Logic:
+1.
+if n > minProposal
+    minProposal = n 
+return(acceptedProposal, acceptedValue) = > Proposer Logic 2
+
+2. 
+if n >= minProposal
+    minProposal = n 
+    acceptedProposal = n 
+    acceptedValue = value 
+return(minProposal) => Proposer Logic 3
+
+
+
+Diagrams and examples: 
+
+P = Prepare
+A = Accept
+BROADCAST TO ALL NODES ALWAYS FOR ALL STEPS 
+P1 -> P(0.1) -> A1, A2, A3 
+A1 -> A(-,-) ->P1
+A2 -> (A-,-) ->P1
+P1 -> (0.1, x=1) -> A1, A2, A3 
+A1 -> (0.1) ->P1
+A2 -> (0.1) ->P1
+Photo 1:
+Perfect yaaa 
+
+Photo 2:
+
+
+Non-Termnation Example
+Both recon at same time 
+first one then proposes value with its round number, but nodes are like no
+So it does another recon with higher number
+But then proposer does the same
+and continues on and on forever 
+
+Problem is Timing:
+-dinner table example, everyone talking at the same time 
+-but at the dinner table we can detect a collision and try to desynchronize
+-add RANDOMNESS to the timing
+    -specifically exponential timeout with RANDOMNESS.
+        -each time we detect a collision double our timeout +-some randomness 
+slow down in our picking of new number, and give the other proposer time to finish
+Want to make it unlikely to run forever, so why don't we use another protocol that guarantees terminaton but not agreement?
+"where could we find such pixie dust"
+
+Leader Election Protocol on the Proposers
+-proposers ping each other 
+-if you've heard of someone with a lower number than you, shut up 
+
+
+What is Paxos useful for?
+-Totally-Ordered Broadcast 
+Another question?
+Reconfiguration-what do we do when majority of acceptors crash? 
+    -need paxos? huh wait what?
+

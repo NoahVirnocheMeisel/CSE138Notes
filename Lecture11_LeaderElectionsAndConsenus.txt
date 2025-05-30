@@ -1,0 +1,65 @@
+Agenda
+Recap: 2-Phase Commit
+The “Consensus” Problem
+Leader Elections
+NOT ACTUALLY DISCUSSING PAXOS TODAY BUT HERE IS WHAT HE SAID
+Paxos
+Common
+Complex
+Not actually that complex, just need to go slow to understand it
+“The Obvious” way to solve the problem of consensus, but also quite complex but still obvious
+
+2 - Phase Commit
+
+Coordinator: One who runs the 2-phase commit
+Participant: One who is implementing the commits, and telling the coordinator that they are ready
+
+Phase One- Prepare Phase
+“Do you take your lawfully wedded wife”
+Coordinator sends request to the participants, and the participants stage a change, and send yes if they are ready back to the coordinator
+Voting yes gives away all agency of the participants
+
+Phase Two - Commit Phase
+“You may now kiss the bride”
+Coordinator, if all yes votes, sends a commit message to the participants, and they execute their staged change
+
+Failure Cases:
+Participant Crashes
+Don’t terminate?
+Saying to commit is unsafe.
+Timeout should lead to abort
+Coordinator Crashes
+Dangerous to elect two kings
+If a non-crashed participant voted no, the collaborative termination protocol can decide abort
+If everyone votes yes, and we can determine this, then the participants can safely commit
+If even 1 participant is offline, it will not terminate
+2-Phase Agreement picks Agreement and Validity but not termination
+
+STUDY THING:
+Study 2-Phase commit and the situations in which it can fail(lamport diagrams)
+
+Leader Election:
+Problem: Out of many computers, choose one(correct) computer
+
+It is OK to temporarily elect more than one leader
+
+Protocol MUST terminate, even if machines crash and networks partition
+
+Computers have unique identity
+
+1,2,3,4 Broadcast to each other
+They all receive each others numbers, and compare to their own/
+4 Sees it is the lowest number, so it removes itself and tells 1,2,3 to keep going
+1,2,3 broadcast again to each other and compare
+
+The node with the lowest identifier removes themselves from the protocol with a message I AM NOT THE LEADER
+
+Worry:
+-what would happen if a node(node 1) is down
+
+Seans Groups Idea:
+
+Periodic Decision to have an election
+After decision, every computer broadcasts their alive and their identity
+After a timeout, each computer receives message from n other computers
+Natural ordering on those numbers, choose the lowest number of those heard from “recently”

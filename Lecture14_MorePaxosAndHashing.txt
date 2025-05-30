@@ -1,0 +1,187 @@
+Agenda:
+More Paxos
+MultiPaxos
+Totally-ordered broadcast
+(for asgn4) The Placement Problem
+Hashing
+Consistent Hashing 
+
+
+
+Asgn4: Easier than asgn3 by a lot. Very easy way to do asgn4 is hash partition. Harder way is to do consisten hasing partition 
+-try abstracting the hashing to a class and get it working with basic hashing, then swap it out later if you want to do the more sophisticated version
+
+
+!!!!!4 Agreement Problem Proposals ON EXAM!!!!!
+1)Consensus (Doesn't Terminate) - Agrees on Some Value
+2) Leader Election (Doesn't necesarily Agree) - Some reachable or up node is elected as the leader
+3) Two-Phase Commit (Doesn't neccesarily terminate) - Whether to do or undo some work is what two phase commit is agreeing on
+4) Two-Generals Problem*  (Doesn't agree or terminate) - whether to co-attack or do something 
+5) Failure Detection (Doesn't neccesarily agree) - agreeing on who all the non-reachable nodes are
+*Not one of the intended examples
+
+Typically the problems that require agreement are harder than ones who sacrifice agreement for termination!!
+
+
+Paxos Review:
+Easy case the proposer completes phase one and gets back empty values so Proposer can use its own value. The acceptors store the proposer value if greater than its current proposal number
+
+Why do the acceptors write down minProposal?
+-if another proposer exists and did its recon but isn't doing anything after we want to be able to overwrite it's proposal eventually
+-can block other proposals which is good as it ensures agreement, but also can happen forever so we want to have exponential backoff 
+
+
+What happen if a proposer comes along and does recon on acceptors that have differnet values?
+-the proposer will take the accepted value that maximizes the proposal number.
+-e.g if ges 0.1 and x=1 and 0.2 and x=5 will take x=5 BECAUSE OF 0.2 NOT the x=5 values!!
+
+To figure out parts of Paxos treat it like a game of battleship(only one proposers information available)
+
+On Final going have LOTS of questions like the ones in class where you have to figure out what happens given some execution of paxos
+
+
+
+Can optimize the protocol in recon phase by skipping phase 2 if we see that the returned proposl number is greater than our own
+
+=============================
+In consensus many problems are pretty well motivated
+-Failure detection to detect a node is down
+-Leader election node(coordinator node)
+-2 phase commit to securley do operations like bit coin transfer
+
+Why do we care about Paxos? 
+
+Maybe you want a ledger? - state of system maybe? 
+if you know the inputs and order of the inputs to a system, we know the state of the system 
+In DS we want to obtain a fault tolerant, totally ordered log. e.g (x=1, y=27, sleep, x=4)
+    - given that log we can answer "x=1"?
+
+But with paxos, if we want to change a value.. we can't. Value of x is set upon being chosen by the protocol. 
+
+If we want  database that has mutable values, how would we use paxos to to obtain a totally ordered log
+
+
+We can have a bunch of nodes and run paxos for ech request recieved and hve th nodes come to agreement on each value
+Multi-Paxos 30000 feet 
+
+
+==========
+T.O.B 
+
+If a node delivers a, then b, then all nodes deliveirn a & b deliver a first 
+-we talked about it before
+
+For each position in our totally ordered log of messages, do a paxos
+-nodes buffer messages until it's that messages turn to be delivered 
+-SLOW-paxos is not fast 0_- 
+
+A is more powerful than B
+
+If I had a program A that was more powerful than B, I could use A to solve B.
+B reduces to A? - i forgot need to review 103 notes 0_-
+
+So is T.O.B more powerful than Consensus or the opposite or equal? 
+Equal, because if we had an algorithm for T.O.B we could implement consensus by having all nodes T.O.B to all other nodes and therefore all nodes will agree on the order of each value.
+Consensu also used to solve T.O.B though as discussed above, so therefore they are equal in powerful
+
+===================
+
+Multi-Paxos (multiple rounds of Paxos)
+Best Case: 2 Roundss 
+Worst Case: Unbounded number of rounds 
+
+Optimizations:
+1) Deal w/ dueling proposers -> desynchronize by layering on leader election in order to hopefully minimize proposers and ideally have one
+    -still can not terminat but lowers probablity of this occuring - we are in probablity land now 
+
+2) Establish a "fast path" 
+-in protocol we do recon to check if the nodes are with you and if there are oher proposers. Also try to beat other prposes number
+-if we don't think there is another proposer out there...we don't actually need to do recon 
+
+Say we get a succesfull recon. We can just keep only using the phase 2 part of the protoocl until we hear information that contradicts this 
+so like
+P(0.1)
+A(0.1, x=1)
+A(0.1, y =7)
+....
+Continue on until we get back different proposal number response from the A queries 
+
+So fast path means skip the prepare phase
+-like a mini leader election 
+
+Out in the real world PAXOS(RAFT in real world) does this. It has one node that sort of dominates and acts as leader until something goes wrong and then it adjusts 
+
+Other questions?
+Shouldn't acceptors know the chosen values? Ya probably. can add protocols 
+
+===============================
+
+Partitioning
+
+In asgn1 we made KVS on one computer 
+-strongly Consistent
+-1 computer
+In asgn2 we made a KVS on multiple computers that was not always available 
+-1 logical computer that you can't tell apart from 1 computer
+
+In asgn3 we made a KVS that was causally consistent but had eventual consistency
+-1 logical computer that you CAN tell apart from 1 computer
+
+In asgn4, the problem is now scaling up via partitioning(Sharding)-each partition is a Shard 
+
+Bunch of computers and a bunch of data, want to smear the data across multiple computers 
+
+In Asgn4, will have multiple LOGICAL shards, and you need to take the data and spread it across the shards 
+-each shard is implemented by causally consistent replica groups 
+-partition asgn3 across many computers 
+
+Why have multiple nodes in a shard?
+
+Shards are Disjoint!!! - so we want to replicate the shards 
+-reason to do this over just all node store the data is for parallel work loads on the data while also still having redundancy 
+
+In shards CC is handled by asgn3(hopefully)
+
+From client perspective, they might give request to wrong shard so we need to create parttion protocol to proxy requests from client to the correct shard 
+
+Given a key, where(which logical shard) does it belong to?
+
+f: K -> Shard_ID 
+
+What are some of the properties of f that are neccesary AND desirable 
+
+1) Uniformity 
+2) Total function (surjective and not injective)
+3) Stable - not sensitive to the number of partitions 
+4) Fast -> on both the read and the write path 
+5) Local -everyone can run f themselves. Alternative is directory server D that tells shards where to send requests 
+
+Fast Read
+
+Strategys:
+
+Place Randomly: Is Uniform, Maybe Stable, Local, Fast Write, Fast Read - NO. Reads need to look everywhere 
+Round-robin: Local, Uniform, could be stable, Fast Write, Fast Read - need to remember where we put kind of 
+Directory: Most Uniform(can decide to put in least lodaded server), Stable, but not local, or fast at all!! 
+Hashing: Unfiform, Local, Reading and Writing are Fast, but its not Stable 0_-
+-H(Data1) % |Servers| = x 
+As servers change x is going to randomly change 
+
+Consistent Hashing: 
+What if we mod the hash data with some big number 2^k 
+Our reuslting number is < 2^k 
+You can always walk the circle counterclockwise 
+
+1) Hash into the unit circle 
+2) Hash data AND servers
+-Host 1 has a position on the circle 
+
+To figure out where the data goes, we find the next host for the data on the unit circle 
+
+If we add a new host, we only need to move the data between then new host and the next host before it
+When a host comes and goes, it only has a local affect along the circles arc 
+Embodied in Chord Protocol and used in the real world for any situation where you have churn in the things you ar hashing to.
+
+Achieves all 5 properties 
+
+This is an option for asgn4 iff you have time
